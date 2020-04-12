@@ -2,15 +2,15 @@
 
 <img align="right" src="https://github.com/quanvu17/deepspat_multivar/blob/master/figures/simulation_asymm_comparison_plot.png" alt="drawing" width="400"/>
 
-This repository provides reproducible code for the manuscript titled *Modeling Nonstationary and Asymmetric Multivariate Spatial Covariances via Deformations* by Quan Vu, Andrew Zammit-Mangion and Noel Cressie. The manuscript describes a new class of nonstationary and asymmetric multivariate spatial covariance models that are constructed via deformations. Specifically, nonstationary and asymmetric processes on a geographical domain are modeled as simpler, more familiar stationary and symmetric processes on a warped domain through deep injective warping functions.
+This repository provides reproducible code for the manuscript titled *Modeling Nonstationary and Asymmetric Multivariate Spatial Covariances via Deformations* by Quan Vu, Andrew Zammit-Mangion, and Noel Cressie. The manuscript describes a new class of nonstationary and asymmetric multivariate spatial covariance models that are constructed via deformations. Specifically, nonstationary and asymmetric processes on a geographical domain are modeled as simpler, more familiar stationary and symmetric processes on a warped domain through deep injective warping functions.
 
 ## Instructions
 
 To reproduce the results and the plots in the manuscript, please download this repository.
 
-Ensure the required packages are installed. The required packages for this script are data.table, deepspat, dplyr, fields, ggplot2, gridExtra, ncdf4, sp, and verification. The deepspat package can be installed from [this github repository](https://github.com/andrewzm/deepspat), while other packages can be installed using the function install.packages in R.
+Ensure the required packages are installed. The required packages for these scripts are `data.table`, `deepspat`, `dplyr`, `fields`, `ggplot2`, `gridExtra`, `ncdf4`, `sp`, and `verification`. The `deepspat` package can be installed from [this github repository](https://github.com/andrewzm/deepspat), while other packages can be installed using the function `install.packages` in R.
 
-Then run through the script files in the folder scripts/ to reproduce either numerical results or figures in the manuscript. The data and results used in the manuscript are saved in the folder data_results/ while the figures used in the manuscript are saved in the folder figures/.
+Once the repository is downloaded, run through the script files in the folder `scripts/` to reproduce either numerical results or figures in the manuscript. The data and results used in the manuscript are saved in the folders `data/` and `results/` while the figures used in the manuscript are saved in the folder `figures/`.
 
 ## Abstract
 

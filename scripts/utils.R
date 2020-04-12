@@ -15,7 +15,7 @@
 
 # Load packages
 library("data.table")
-library("devtools")
+library("deepspat")
 library("dplyr")
 library("fields")
 library("ggplot2")
@@ -23,7 +23,6 @@ library("gridExtra")
 library("ncdf4")
 library("sp")
 library("verification")
-load_all("deepspat")
 
 # RMSPE
 RMSPE <- function(true, pred){

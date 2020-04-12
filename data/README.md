@@ -12,13 +12,13 @@ Note that you will need Copernicus login details to access the site.
 -63.3 to -60.0 lon
 36.3 to 39.6 lat
 
-and the temporal window to 2018-07-01 -- 2018-07-01
+5. Change the temporal window to 2018-07-01 -- 2018-07-01
 
-3. Change select depth to 0.494 -- 318.1274 m
+6. Change select depth to 0.494 -- 318.1274 m
 
-4. Choose variable theta0
+7. Choose variable theta0
 
-5. Click download
+8. Click download
 
 #################################
 

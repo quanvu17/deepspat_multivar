@@ -51,7 +51,7 @@ for (i in 1:5){
                           family = "matern_stat_symm",
                           method = "REML", nsteps = 150L
   )
-  predML1 <- predict.deepspat_multivar(d1, newdata = newdata)
+  predML1 <- predict(d1, newdata = newdata)
   
   # Fit Model 2 (nonstationary, symmetric)
   d2 <- deepspat_multivar(f = z1 + z2 ~ s1 + s2 - 1, data = df, g = ~ 1,
@@ -59,14 +59,14 @@ for (i in 1:5){
                           family = "matern_nonstat_symm",
                           method = "REML", nsteps = 150L
   )
-  predML2 <- predict.deepspat_multivar(d2, newdata = newdata)
+  predML2 <- predict(d2, newdata = newdata)
   
   # Fit Model 3 (stationary, symmetric, with covariate in trend)
   d3 <- deepspat_multivar(f = z1 + z2 ~ s1 + s2 - 1, data = df, g = ~ s3 + 1,
                           family = "matern_stat_symm",
                           method = "REML", nsteps = 150L
   )
-  predML3 <- predict.deepspat_multivar(d3, newdata = newdata)
+  predML3 <- predict(d3, newdata = newdata)
   
   # Fit Model 4 (nonstationary, symmetric, with covariate in trend)
   d4 <- deepspat_multivar(f = z1 + z2 ~ s1 + s2 - 1, data = df, g = ~ s3 + 1,
@@ -74,7 +74,7 @@ for (i in 1:5){
                           family = "matern_nonstat_symm",
                           method = "REML", nsteps = 150L
   )
-  predML4 <- predict.deepspat_multivar(d4, newdata = newdata)
+  predML4 <- predict(d4, newdata = newdata)
   
   df_pred1 <- data.frame(predML1$df_pred, z1=test_data$TMAX, z2=test_data$TMIN)
   df_pred2 <- data.frame(predML2$df_pred, z1=test_data$TMAX, z2=test_data$TMIN)
@@ -138,7 +138,7 @@ d1 <- deepspat_multivar(f = z1 + z2 ~ s1 + s2 - 1, data = df, g = ~ 1,
                         family = "matern_stat_symm",
                         method = "REML", nsteps = 150L
 )
-predML1 <- predict.deepspat_multivar(d1, newdata = newdata)
+predML1 <- predict(d1, newdata = newdata)
 
 # Fit Model 2 (nonstationary, symmetric)
 d2 <- deepspat_multivar(f = z1 + z2 ~ s1 + s2 - 1, data = df, g = ~ 1,
@@ -146,14 +146,14 @@ d2 <- deepspat_multivar(f = z1 + z2 ~ s1 + s2 - 1, data = df, g = ~ 1,
                         family = "matern_nonstat_symm",
                         method = "REML", nsteps = 150L
 )
-predML2 <- predict.deepspat_multivar(d2, newdata = newdata)
+predML2 <- predict(d2, newdata = newdata)
 
 # Fit Model 3 (stationary, symmetric, with covariate in trend)
 d3 <- deepspat_multivar(f = z1 + z2 ~ s1 + s2 - 1, data = df, g = ~ s3 + 1,
                         family = "matern_stat_symm",
                         method = "REML", nsteps = 150L
 )
-predML3 <- predict.deepspat_multivar(d3, newdata = newdata)
+predML3 <- predict(d3, newdata = newdata)
 
 # Fit Model 4 (nonstationary, symmetric, with covariate in trend)
 d4 <- deepspat_multivar(f = z1 + z2 ~ s1 + s2 - 1, data = df, g = ~ s3 + 1,
@@ -161,7 +161,7 @@ d4 <- deepspat_multivar(f = z1 + z2 ~ s1 + s2 - 1, data = df, g = ~ s3 + 1,
                         family = "matern_nonstat_symm",
                         method = "REML", nsteps = 150L
 )
-predML4 <- predict.deepspat_multivar(d4, newdata = newdata)
+predML4 <- predict(d4, newdata = newdata)
 
 predML1.0 <- predML1$df_pred[predML1$df_pred$s1 > -108 & predML1$df_pred$s1 < -104 & predML1$df_pred$s2 > 36 & predML1$df_pred$s2 < 39,]
 predML2.0 <- predML2$df_pred[predML2$df_pred$s1 > -108 & predML2$df_pred$s1 < -104 & predML2$df_pred$s2 > 36 & predML2$df_pred$s2 < 39,]
@@ -230,7 +230,7 @@ d1 <- deepspat_multivar(f = z1 + z2 ~ s1 + s2 - 1, data = df, g = ~ 1,
                         family = "matern_stat_symm",
                         method = "REML", nsteps = 150L
 )
-predML1 <- predict.deepspat_multivar(d1, newdata = newdata)
+predML1 <- predict(d1, newdata = newdata)
 
 # Fit Model 2 (nonstationary, symmetric)
 d2 <- deepspat_multivar(f = z1 + z2 ~ s1 + s2 - 1, data = df, g = ~ 1,
@@ -238,7 +238,7 @@ d2 <- deepspat_multivar(f = z1 + z2 ~ s1 + s2 - 1, data = df, g = ~ 1,
                         family = "matern_nonstat_symm",
                         method = "REML", nsteps = 150L
 )
-predML2 <- predict.deepspat_multivar(d2, newdata = newdata)
+predML2 <- predict(d2, newdata = newdata)
 
 noise_var_1_model1 <- 1/d1$run(d1$precy_tf_1)
 noise_var_2_model1 <- 1/d1$run(d1$precy_tf_2)

@@ -118,7 +118,7 @@ for (i in 1:5){
                           family = "matern_stat_symm",
                           method = "REML", nsteps = 150L
   )
-  predML1 <- predict.deepspat_multivar(d1, newdata = newdata)
+  predML1 <- predict(d1, newdata = newdata)
   
   # Fit Model 2 (stationary, asymmetric)
   d2 <- deepspat_multivar(f = z1 + z2 ~ s1 + s2 - 1, data = df, g = ~ 1,
@@ -126,7 +126,7 @@ for (i in 1:5){
                           family = "matern_stat_asymm",
                           method = "REML", nsteps = 150L
   )
-  predML2 <- predict.deepspat_multivar(d2, newdata = newdata)
+  predML2 <- predict(d2, newdata = newdata)
   
   # Fit Model 3 (nonstationary, symmetric)
   d3 <- deepspat_multivar(f = z1 + z2 ~ s1 + s2 - 1, data = df, g = ~ 1,
@@ -134,7 +134,7 @@ for (i in 1:5){
                           family = "matern_nonstat_symm",
                           method = "REML", nsteps = 150L
   )
-  predML3 <- predict.deepspat_multivar(d3, newdata = newdata)
+  predML3 <- predict(d3, newdata = newdata)
   
   # Fit Model 4 (nonstationary, asymmetric)
   d4 <- deepspat_multivar(f = z1 + z2 ~ s1 + s2 - 1, data = df, g = ~ 1,
@@ -142,7 +142,7 @@ for (i in 1:5){
                           family = "matern_nonstat_asymm",
                           method = "REML", nsteps = 150L
   )
-  predML4 <- predict.deepspat_multivar(d4, newdata = newdata)
+  predML4 <- predict(d4, newdata = newdata)
   
   df_pred1 <- data.frame(predML1$df_pred, y1=test_data$y1, y2=test_data$y2)
   df_pred2 <- data.frame(predML2$df_pred, y1=test_data$y1, y2=test_data$y2)
@@ -194,7 +194,7 @@ d2 <- deepspat_multivar(f = z1 + z2 ~ s1 + s2 - 1, data = df2, g = ~ 1,
                         family = "matern_stat_asymm",
                         method = "REML", nsteps = 150L
 )
-predML2 <- predict.deepspat_multivar(d2, newdata = newdata)
+predML2 <- predict(d2, newdata = newdata)
 
 # Fit Model 3 (nonstationary, symmetric)
 d3 <- deepspat_multivar(f = z1 + z2 ~ s1 + s2 - 1, data = df2, g = ~ 1,
@@ -202,7 +202,7 @@ d3 <- deepspat_multivar(f = z1 + z2 ~ s1 + s2 - 1, data = df2, g = ~ 1,
                         family = "matern_nonstat_symm",
                         method = "REML", nsteps = 150L
 )
-predML3 <- predict.deepspat_multivar(d3, newdata = newdata)
+predML3 <- predict(d3, newdata = newdata)
 
 # Fit Model 4 (nonstationary, asymmetric)
 d4 <- deepspat_multivar(f = z1 + z2 ~ s1 + s2 - 1, data = df2, g = ~ 1,
@@ -210,7 +210,7 @@ d4 <- deepspat_multivar(f = z1 + z2 ~ s1 + s2 - 1, data = df2, g = ~ 1,
                         family = "matern_nonstat_asymm",
                         method = "REML", nsteps = 150L
 )
-predML4 <- predict.deepspat_multivar(d4, newdata = newdata)
+predML4 <- predict(d4, newdata = newdata)
 
 predML <- list(predML2, predML3, predML4)
 save(predML, file = "results/simulation_asymm_predictions.rda")

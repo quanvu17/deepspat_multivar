@@ -61,7 +61,7 @@ for (i in 1 : 5) {
                             family = "matern_stat_symm",
                             method = "REML", nsteps = 150L
     )
-    predML1 <- predict.deepspat_multivar(d1, newdata = newdata)
+    predML1 <- predict(d1, newdata = newdata)
     
     # Fit Model 2 (nonstationary, symmetric)
     d2 <- deepspat_multivar(f = z1 + z2 ~ s1 + s2 - 1, data = df, g = ~ 1,
@@ -69,7 +69,7 @@ for (i in 1 : 5) {
                             family = "matern_nonstat_symm",
                             method = "REML", nsteps = 150L
     )
-    predML2 <- predict.deepspat_multivar(d2, newdata = newdata)
+    predML2 <- predict(d2, newdata = newdata)
     
     # Fit Model 3 (nonstationary, asymmetric)
     d3 <- deepspat_multivar(f = z1 + z2 ~ s1 + s2 - 1, data = df, g = ~ 1,
@@ -77,7 +77,7 @@ for (i in 1 : 5) {
                             family = "matern_nonstat_asymm",
                             method = "REML", nsteps = 150L
     )
-    predML3 <- predict.deepspat_multivar(d3, newdata = newdata)
+    predML3 <- predict(d3, newdata = newdata)
     
     df_pred1 <- data.frame(predML1$df_pred, z1=test_data$temp_1m, z2=test_data$temp_318m)
     df_pred2 <- data.frame(predML2$df_pred, z1=test_data$temp_1m, z2=test_data$temp_318m)
@@ -133,7 +133,7 @@ d1 <- deepspat_multivar(f = z1 + z2 ~ s1 + s2 - 1, data = df, g = ~ 1,
                         family = "matern_stat_symm",
                         method = "REML", nsteps = 150L
 )
-predML1 <- predict.deepspat_multivar(d1, newdata = newdata)
+predML1 <- predict(d1, newdata = newdata)
 
 # Fit Model 2 (nonstationary, symmetric)
 d2 <- deepspat_multivar(f = z1 + z2 ~ s1 + s2 - 1, data = df, g = ~ 1,
@@ -141,7 +141,7 @@ d2 <- deepspat_multivar(f = z1 + z2 ~ s1 + s2 - 1, data = df, g = ~ 1,
                         family = "matern_nonstat_symm",
                         method = "REML", nsteps = 150L
 )
-predML2 <- predict.deepspat_multivar(d2, newdata = newdata)
+predML2 <- predict(d2, newdata = newdata)
 
 # Fit Model 3 (nonstationary, asymmetric)
 d3 <- deepspat_multivar(f = z1 + z2 ~ s1 + s2 - 1, data = df, g = ~ 1,
@@ -149,7 +149,7 @@ d3 <- deepspat_multivar(f = z1 + z2 ~ s1 + s2 - 1, data = df, g = ~ 1,
                         family = "matern_nonstat_asymm",
                         method = "REML", nsteps = 150L
 )
-predML3 <- predict.deepspat_multivar(d3, newdata = newdata)
+predML3 <- predict(d3, newdata = newdata)
 
 predML1.0 <- predML1$df_pred[predML1$df_pred$s2 > 37.5 & predML1$df_pred$s2 < 38.2,]
 predML2.0 <- predML2$df_pred[predML2$df_pred$s2 > 37.5 & predML2$df_pred$s2 < 38.2,]

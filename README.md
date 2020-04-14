@@ -2,7 +2,7 @@
 
 <img align="right" src="https://github.com/quanvu17/deepspat_multivar/blob/master/figures/simulation_asymm_comparison_plot.png" alt="drawing" width="400"/>
 
-This repository provides reproducible code for the manuscript titled *Modeling Nonstationary and Asymmetric Multivariate Spatial Covariances via Deformations* by Quan Vu, Andrew Zammit-Mangion, and Noel Cressie. The manuscript describes a new class of nonstationary and asymmetric multivariate spatial covariance models that are constructed via deformations. Specifically, nonstationary and asymmetric processes on a geographical domain are modeled as simpler, more familiar stationary and symmetric processes on a warped domain through deep injective warping functions.
+This repository provides reproducible code for the manuscript titled *Modeling Nonstationary and Asymmetric Multivariate Spatial Covariances via Deformations* by Quan Vu, Andrew Zammit-Mangion, and Noel Cressie. The manuscript describes a new class of nonstationary and asymmetric multivariate spatial covariance models that are constructed via deformations. Specifically, nonstationary and asymmetric covariances on a geographic domain are modeled as simpler, more familiar, stationary and symmetric covariances on a warped domain through deep injective warping functions.
 
 ## Instructions
 

@@ -118,3 +118,41 @@ gplot <- grid.arrange(g2a1, g2b1.1, g2b1.2,
 )
 
 ggsave(filename="figures/application_maxmin_comparison_block_holdout_plot.png", plot=gplot, device="png", width=33, height=44, scale=1, units="cm", dpi=300)
+
+# Plot the true and estimated warping function
+# Pick 3 points
+k <- 714
+l <- 190
+m <- 508
+
+# True warping
+sim <- read.csv("data/1796013.csv")
+sim <- sim[!is.na(sim$TMAX),]
+sim <- sim[!is.na(sim$TMIN),]
+all_data <- sim
+test_data <- sim[(sim$LATITUDE > 36) & (sim$LATITUDE < 39) & (sim$LONGITUDE > -108) & (sim$LONGITUDE < -104),]
+train_data <- setdiff(all_data, test_data)
+
+sw <- matrix(c(train_data$LONGITUDE, train_data$LATITUDE), ncol=2)
+sw <- b0(sw, k, l, m)
+sw.df <- data.frame(x=sw[,1], y=sw[,2])
+
+warp.plot1 <- ggplot() + geom_point(data=sw.df, aes(x, y), colour = "black", size = 0.5) +
+  theme_bw() + coord_cartesian(xlim = c(-1.2,1.2), ylim = c(-1.5,1)) +
+  theme(text = element_text(size=15)) +
+  labs(x=expression(paste('b'['0,1'], '(', bold(s), ')')), y=expression(paste('b'['0,2'], '(', bold(s), ')')))
+
+# Estimated warping
+load("results/application_maxmin_parameter_estimate.rda")
+
+sw <- parameter_est[[12]]
+sw <- b0(sw, k, l, m)
+sw.df <- data.frame(x=sw[,1], y=sw[,2])
+warp.plot2 <- ggplot() + geom_point(data=sw.df, aes(x,y), col=rgb(0,0,1), size=0.5, alpha=1) +
+  theme_bw() + coord_cartesian(xlim = c(-1.2,1.2), ylim = c(-1.5,1)) +
+  labs(x=expression(paste('b'['0,1'],'(', bold(f), '(', bold(s), '))')), y=expression(paste('b'['0,2'],'(', bold(f), '(', bold(s), '))'))) +
+  theme(text = element_text(size=15))
+
+gplot <- grid.arrange(warp.plot1, warp.plot2, nrow = 1)
+
+ggsave(filename="figures/application_maxmin_warping_plot.png", plot=gplot, device="png", width=20, height=10, scale=1, units="cm", dpi=300)

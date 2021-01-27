@@ -63,48 +63,48 @@ names(df) <- c("s1", "s2", "y1", "y2", "z1", "z2")
 # Save data
 save(df, file="results/simulation_symm_dataset.rda")
 
-# Sample a subset of data for the experiment
-RNGkind(sample.kind = "Rounding")
-set.seed(1)
-sam2 <- sample(1:nrow(df), 1000)
-df2 <- df[sam2,]
-
-# Five fold Cross validation experiment
-RNGkind(sample.kind = "Rounding")
-set.seed(1)
-all_data <- df2
-sam <- sample(1:nrow(all_data), nrow(all_data))
-all_data <- all_data[sam,]
-groups_data <- split(all_data, (seq(nrow(all_data))-1) %/% (nrow(all_data)/5))
+# Cross validation experiment
+all_data <- df
 
 rmse1_model1 <- rmse2_model1 <- crps1_model1 <- crps2_model1 <-
-  rmse1_model2 <- rmse2_model2 <- crps1_model2 <- crps2_model2 <- rep(0,5)
+  rmse1_model2 <- rmse2_model2 <- crps1_model2 <- crps2_model2 <-
+  Cost1 <- time1 <- Cost2 <- time2 <- rep(0,30)
 
 layers <- c(AWU(r = 50L, dim = 1L, grad = 200, lims = c(-0.5, 0.5)),
             AWU(r = 50L, dim = 2L, grad = 200, lims = c(-0.5, 0.5)),
             RBF_block(),
             LFT())
 
-for (i in 1:5){
-  test_data <- groups_data[[i]]
-  train_data <- setdiff(all_data, test_data)
+for (i in 1:30){
+  RNGkind(sample.kind = "Rounding")
+  set.seed(i)
+  df <- all_data
+  sam2 <- sample(1:nrow(df), 1000)
+  train_data <- df[sam2,]
+  test_data <- dplyr::setdiff(df, train_data)
   
   df <- dplyr::select(train_data, s1, s2, z1, z2)
   newdata <- dplyr::select(test_data, s1, s2)
   
   # Fit Model 1 (stationary, symmetric)
-  d1 <- deepspat_multivar(f = z1 + z2 ~ s1 + s2 - 1, data = df, g = ~ 1,
+  t1 <- proc.time()
+  d1 <- deepspat_bivar_GP(f = z1 + z2 ~ s1 + s2 - 1, data = df, g = ~ 1,
                           family = "matern_stat_symm",
                           method = "REML", nsteps = 150L
   )
+  t2 <- proc.time()
+  time1[i] <- (t2 - t1)[3]
   predML1 <- predict(d1, newdata = newdata)
   
   # Fit Model 2 (nonstationary, symmetric)
-  d2 <- deepspat_multivar(f = z1 + z2 ~ s1 + s2 - 1, data = df, g = ~ 1,
+  t1 <- proc.time()
+  d2 <- deepspat_bivar_GP(f = z1 + z2 ~ s1 + s2 - 1, data = df, g = ~ 1,
                           layers = layers,
                           family = "matern_nonstat_symm",
                           method = "REML", nsteps = 150L
   )
+  t2 <- proc.time()
+  time2[i] <- (t2 - t1)[3]
   predML2 <- predict(d2, newdata = newdata)
   
   df_pred1 <- data.frame(predML1$df_pred, y1=test_data$y1, y2=test_data$y2)
@@ -121,11 +121,41 @@ for (i in 1:5){
   crps1_model2[i] <- CRPS(df_pred2$y1, df_pred2$pred_mean_1, df_pred2$pred_var_1)
   crps2_model2[i] <- CRPS(df_pred2$y2, df_pred2$pred_mean_2, df_pred2$pred_var_2)
   
+  Cost1[i] <- d1$run(d1$Cost)
+  Cost2[i] <- d2$run(d2$Cost)
+  
+  if (i == 1){
+    # Save parameter estimates
+    eta <- d2$run(d2$eta_tf)
+    LFT_pars <- d2$run(d2$layers[[12]]$pars)
+    scalings <- d2$run(d2$scalings)
+    nu_1 <- d2$run(d2$nu_tf_1)
+    nu_2 <- d2$run(d2$nu_tf_2)
+    sigma2_1 <- d2$run(d2$sigma2_tf_1)
+    sigma2_2 <- d2$run(d2$sigma2_tf_2)
+    sigma2_12 <- d2$run(d2$sigma2_tf_12)
+    l <- as.numeric(d2$run(d2$l_tf_1))
+    precy_1 <- d2$run(d2$precy_tf_1)
+    precy_2 <- d2$run(d2$precy_tf_2)
+    s_warped <- d2$run(d2$swarped_tf1)
+    beta <- d2$run(d2$beta)
+    parameter_est <- list(eta,LFT_pars,scalings,nu_1,nu_2,sigma2_1,sigma2_2,sigma2_12,l,precy_1,precy_2,s_warped,beta)
+    save(parameter_est, file = paste0("results/simulation_symm_parameter_estimate.rda"))
+    
+    newdata <- all_data
+    
+    # Save predictions for plotting the comparison
+    predML1 <- predict(d1, newdata = newdata)
+    predML2 <- predict(d2, newdata = newdata)
+  
+    predML <- list(predML1$df_pred, predML2$df_pred)
+    save(predML, file = "results/simulation_symm_predictions.rda")
+  }
 }
 
 # Save cross validation results
-crossvalid <- list(rmse1_model1, crps1_model1, rmse2_model1, crps2_model1,
-                   rmse1_model2, crps1_model2, rmse2_model2, crps2_model2
+crossvalid <- list(rmse1_model1, crps1_model1, rmse2_model1, crps2_model1, Cost1, time1,
+                   rmse1_model2, crps1_model2, rmse2_model2, crps2_model2, Cost2, time2
 )
 
 save(crossvalid, file="results/simulation_symm_crossvalidation.rda")
@@ -133,104 +163,14 @@ save(crossvalid, file="results/simulation_symm_crossvalidation.rda")
 # Cross validation results
 matrix(unlist(lapply(crossvalid, mean)), nrow = 2, byrow=T)
 
-# Plotting the comparison
-load("results/simulation_symm_dataset.rda")
-
-newdata <- df
-
-# Fit Models
-
-# Fit Model 1 (stationary, symmetric)
-d1 <- deepspat_multivar(f = z1 + z2 ~ s1 + s2 - 1, data = df2, g = ~ 1,
-                        family = "matern_stat_symm",
-                        method = "REML", nsteps = 150L
-)
-predML1 <- predict(d1, newdata = newdata)
-
-# Fit Model 2 (nonstationary, symmetric)
-d2 <- deepspat_multivar(f = z1 + z2 ~ s1 + s2 - 1, data = df2, g = ~ 1,
-                        layers = layers,
-                        family = "matern_nonstat_symm",
-                        method = "REML", nsteps = 150L
-)
-# Save parameter estimates
-eta <- d2$run(d2$eta_tf)
-LFT_pars <- d2$run(d2$layers[[12]]$pars)
-scalings <- d2$run(d2$scalings)
-nu_1 <- d2$run(d2$nu_tf_1)
-nu_2 <- d2$run(d2$nu_tf_2)
-sigma2_1 <- d2$run(d2$sigma2_tf_1)
-sigma2_2 <- d2$run(d2$sigma2_tf_2)
-sigma2_12 <- d2$run(d2$sigma2_tf_12)
-l <- as.numeric(d2$run(d2$l_tf_1))
-precy_1 <- d2$run(d2$precy_tf_1)
-precy_2 <- d2$run(d2$precy_tf_2)
-s_warped <- d2$run(d2$swarped_tf1)
-beta <- d2$run(d2$beta)
-negcost <- d2$negcost
-parameter_est <- list(eta,LFT_pars,scalings,nu_1,nu_2,sigma2_1,sigma2_2,sigma2_12,l,precy_1,precy_2,s_warped,beta,negcost)
-save(parameter_est, file = paste0("results/simulation_symm_parameter_estimate.rda"))
-
-predML2 <- predict(d2, newdata = newdata)
-
-df_pred1 <- data.frame(predML1$df_pred, y1=df$y1, y2=df$y2)
-df_pred2 <- data.frame(predML2$df_pred, y1=df$y1, y2=df$y2)
-
-# Gap experiment
-df1 <- df[df$s1 > -0.28 & df$s1 < -0.08 & df$s2 > -0.48 & df$s2 < -0.28,]
-df0 <- setdiff(df,df1)
-RNGkind(sample.kind = "Rounding")
-set.seed(2)
-sam <- sample(1:nrow(df0), 1000)
-df3 <- df0[sam,]
-
-# Fit Models
-newdata <- df
-
-# Fit Model 1 (stationary, symmetric)
-d1 <- deepspat_multivar(f = z1 + z2 ~ s1 + s2 - 1, data = df3, g = ~ 1,
-                        family = "matern_stat_symm",
-                        method = "REML", nsteps = 150L
-)
-predML3 <- predict(d1, newdata = newdata)
-
-# Fit Model 2 (nonstationary, symmetric)
-d2 <- deepspat_multivar(f = z1 + z2 ~ s1 + s2 - 1, data = df3, g = ~ 1,
-                        layers = layers,
-                        family = "matern_nonstat_symm",
-                        method = "REML", nsteps = 150L
-)
-predML4 <- predict(d2, newdata = newdata)
-
-df_pred3 <- data.frame(predML3$df_pred, y1=df$y1, y2=df$y2)
-df_pred4 <- data.frame(predML4$df_pred, y1=df$y1, y2=df$y2)
-
-predML3.0 <- predML3$df_pred[predML3$df_pred$s1 > -0.28 & predML3$df_pred$s1 < -0.08 & predML3$df_pred$s2 > -0.48 & predML3$df_pred$s2 < -0.28,]
-predML4.0 <- predML4$df_pred[predML4$df_pred$s1 > -0.28 & predML4$df_pred$s1 < -0.08 & predML4$df_pred$s2 > -0.48 & predML4$df_pred$s2 < -0.28,]
-
-# Save RMSPE and CRPS for the gap experiment
-rmse1_model1 <- RMSPE(df1$y1, predML3.0$pred_mean_1)
-rmse2_model1 <- RMSPE(df1$y2, predML3.0$pred_mean_2)
-crps1_model1 <- CRPS(df1$y1, predML3.0$pred_mean_1, predML3.0$pred_var_1)
-crps2_model1 <- CRPS(df1$y2, predML3.0$pred_mean_2, predML3.0$pred_var_2)
-
-rmse1_model2 <- RMSPE(df1$y1, predML4.0$pred_mean_1)
-rmse2_model2 <- RMSPE(df1$y2, predML4.0$pred_mean_2)
-crps1_model2 <- CRPS(df1$y1, predML4.0$pred_mean_1, predML4.0$pred_var_1)
-crps2_model2 <- CRPS(df1$y2, predML4.0$pred_mean_2, predML4.0$pred_var_2)
-
-block_holdout <- list(rmse1_model1, crps1_model1, rmse2_model1, crps2_model1,
-                      rmse1_model2, crps1_model2, rmse2_model2, crps2_model2
-)
-
-save(block_holdout, file="results/simulation_symm_block_holdout.rda")
-
-# Save prediction results for plotting
-predML <- list(predML1, predML2, predML3, predML4)
-save(predML, file = "results/simulation_symm_predictions.rda")
-
 # Bootstrap
 # Estimated covariance matrix 
+RNGkind(sample.kind = "Rounding")
+set.seed(1)
+df <- all_data
+sam2 <- sample(1:nrow(df), 1000)
+train_data <- df[sam2,]
+
 D <- fields::rdist(s_warped)
 C11 <- fields::Matern(D, range=l, nu=nu_1, phi=sigma2_1)
 C12 <- fields::Matern(D, range=l, nu=(nu_1+nu_2)/2, phi=sigma2_12)
@@ -255,7 +195,7 @@ layers <- c(AWU(r = r1, dim = 1L, grad = 200, lims = c(-0.5, 0.5)),
             AWU(r = r1, dim = 2L, grad = 200, lims = c(-0.5, 0.5)),
             RBF_block(),
             LFT())
-d <- deepspat_multivar(f = z1 + z2 ~ s1 + s2 - 1,  data = df, g = ~ 1,
+d <- deepspat_bivar_GP(f = z1 + z2 ~ s1 + s2 - 1,  data = df, g = ~ 1,
                        layers = layers,
                        family = "matern_nonstat_symm",
                        method = "REML", nsteps = 150L

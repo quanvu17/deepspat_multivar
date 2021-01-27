@@ -47,10 +47,14 @@ swarped1 <- swarped2 <- s
 for(j in 1: (nlayers_asym)){
   swarped1 <- swarped1
   swarped2 <- layers_asym[[j]]$fR(swarped2, eta[[j]])
-  swarped1[,1] <- (swarped1[,1] - min(c(swarped1[,1], swarped2[,1]))) / (max(c(swarped1[,1], swarped2[,1])) - min(c(swarped1[,1], swarped2[,1]))) - 0.5
-  swarped1[,2] <- (swarped1[,2] - min(c(swarped1[,2], swarped2[,2]))) / (max(c(swarped1[,2], swarped2[,2])) - min(c(swarped1[,2], swarped2[,2]))) - 0.5
-  swarped2[,1] <- (swarped2[,1] - min(c(swarped1[,1], swarped2[,1]))) / (max(c(swarped1[,1], swarped2[,1])) - min(c(swarped1[,1], swarped2[,1]))) - 0.5
-  swarped2[,2] <- (swarped2[,2] - min(c(swarped1[,2], swarped2[,2]))) / (max(c(swarped1[,2], swarped2[,2])) - min(c(swarped1[,2], swarped2[,2]))) - 0.5
+  minsw1 <- min(c(swarped1[,1], swarped2[,1]))
+  maxsw1 <- max(c(swarped1[,1], swarped2[,1]))
+  minsw2 <- min(c(swarped1[,2], swarped2[,2]))
+  maxsw2 <- max(c(swarped1[,2], swarped2[,2]))
+  swarped1[,1] <- (swarped1[,1] - minsw1) / (maxsw1 - minsw1) - 0.5
+  swarped1[,2] <- (swarped1[,2] - minsw2) / (maxsw2 - minsw2) - 0.5
+  swarped2[,1] <- (swarped2[,1] - minsw1) / (maxsw1 - minsw1) - 0.5
+  swarped2[,2] <- (swarped2[,2] - minsw2) / (maxsw2 - minsw2) - 0.5
 }
 
 for(j in 1: (nlayers)){
@@ -82,23 +86,15 @@ names(df) <- c("s1", "s2", "y1", "y2", "z1", "z2")
 # Save data
 save(df, file="results/simulation_asymm_dataset.rda")
 
-# Sample a subset of data for the experiment
-RNGkind(sample.kind = "Rounding")
-set.seed(1)
-sam2 <- sample(1:nrow(df), 1000)
-df2 <- df[sam2,]
+# Cross validation experiment
+all_data <- df
 
-# Five fold Cross validation experiment
-RNGkind(sample.kind = "Rounding")
-set.seed(1)
-all_data <- df2
-sam <- sample(1:nrow(all_data), nrow(all_data))
-all_data <- all_data[sam,]
-groups_data <- split(all_data, (seq(nrow(all_data))-1) %/% (nrow(all_data)/5))
-
-rmse1_model1 <- rmse2_model1 <- crps1_model1 <- crps2_model1 <- rmse1_model2 <- rmse2_model2 <- crps1_model2 <- crps2_model2 <-
-  rmse1_model3 <- rmse2_model3 <- crps1_model3 <- crps2_model3 <- rmse1_model4 <- rmse2_model4 <- crps1_model4 <- crps2_model4 <-
-  rep(0,5)
+rmse1_model1 <- rmse2_model1 <- crps1_model1 <- crps2_model1 <- Cost1 <- time1 <-
+  rmse1_model2 <- rmse2_model2 <- crps1_model2 <- crps2_model2 <- Cost2 <- time2 <-
+  rmse1_model3 <- rmse2_model3 <- crps1_model3 <- crps2_model3 <- Cost3 <- time3 <-
+  rmse1_model4 <- rmse2_model4 <- crps1_model4 <- crps2_model4 <- Cost4 <- time4 <-
+  rmse1_model5 <- rmse2_model5 <- crps1_model5 <- crps2_model5 <- Cost5 <- time5 <-
+  rep(0,30)
 
 layers <- c(AWU(r = 50, dim = 1L, grad = 200, lims = c(-0.5, 0.5)),
             AWU(r = 50, dim = 2L, grad = 200, lims = c(-0.5, 0.5)),
@@ -107,47 +103,85 @@ layers <- c(AWU(r = 50, dim = 1L, grad = 200, lims = c(-0.5, 0.5)),
 
 layers_asym <- c(AFF_2D())
 
-for (i in 1:5){
-  test_data <- groups_data[[i]]
-  train_data <- setdiff(all_data, test_data)
-  df <- dplyr::select(train_data, s1, s2, z1, z2)
-  newdata <- test_data
-  
+for (i in 1:30){
+# Sample a subset of data for the experiment
+RNGkind(sample.kind = "Rounding")
+set.seed(i)
+df <- all_data
+sam2 <- sample(1:nrow(df), 1000)
+train_data <- df[sam2,]
+test_data <- dplyr::setdiff(df, train_data)
+
+df <- dplyr::select(train_data, s1, s2, z1, z2)
+newdata <- dplyr::select(test_data, s1, s2)
+
   # Fit Model 1 (stationary, symmetric)
-  d1 <- deepspat_multivar(f = z1 + z2 ~ s1 + s2 - 1, data = df, g = ~ 1,
+  t1 <- proc.time()
+  d1 <- deepspat_bivar_GP(f = z1 + z2 ~ s1 + s2 - 1, data = df, g = ~ 1,
                           family = "matern_stat_symm",
                           method = "REML", nsteps = 150L
   )
+  t2 <- proc.time()
+  time1[i] <- (t2 - t1)[3]
   predML1 <- predict(d1, newdata = newdata)
   
   # Fit Model 2 (stationary, asymmetric)
-  d2 <- deepspat_multivar(f = z1 + z2 ~ s1 + s2 - 1, data = df, g = ~ 1,
+  t1 <- proc.time()
+  d2 <- deepspat_bivar_GP(f = z1 + z2 ~ s1 + s2 - 1, data = df, g = ~ 1,
                           layers_asym = layers_asym,
                           family = "matern_stat_asymm",
                           method = "REML", nsteps = 150L
   )
+  t2 <- proc.time()
+  time2[i] <- (t2 - t1)[3]
   predML2 <- predict(d2, newdata = newdata)
   
-  # Fit Model 3 (nonstationary, symmetric)
-  d3 <- deepspat_multivar(f = z1 + z2 ~ s1 + s2 - 1, data = df, g = ~ 1,
+  # Fit Model 3 (univariate nonstationary)
+  t1 <- proc.time()
+  d3.1 <- deepspat_GP(f = z1 ~ s1 + s2 - 1, data = df, g = ~ 1,
+                      layers = layers,
+                      family = "matern_nonstat",
+                      method = "REML", nsteps = 150L
+  )
+  
+  d3.2 <- deepspat_GP(f = z2 ~ s1 + s2 - 1, data = df, g = ~ 1,
+                      layers = layers,
+                      family = "matern_nonstat",
+                      method = "REML", nsteps = 150L
+  )
+  t2 <- proc.time()
+  time3[i] <- (t2 - t1)[3]
+  predML3.1 <- predict(d3.1, newdata = newdata)
+  predML3.2 <- predict(d3.2, newdata = newdata)
+  
+  # Fit Model 4 (nonstationary, symmetric)
+  t1 <- proc.time()
+  d4 <- deepspat_bivar_GP(f = z1 + z2 ~ s1 + s2 - 1, data = df, g = ~ 1,
                           layers = layers,
                           family = "matern_nonstat_symm",
                           method = "REML", nsteps = 150L
   )
-  predML3 <- predict(d3, newdata = newdata)
+  t2 <- proc.time()
+  time4[i] <- (t2 - t1)[3]
+  predML4 <- predict(d4, newdata = newdata)
   
-  # Fit Model 4 (nonstationary, asymmetric)
-  d4 <- deepspat_multivar(f = z1 + z2 ~ s1 + s2 - 1, data = df, g = ~ 1,
+  # Fit Model 5 (nonstationary, asymmetric)
+  t1 <- proc.time()
+  d5 <- deepspat_bivar_GP(f = z1 + z2 ~ s1 + s2 - 1, data = df, g = ~ 1,
                           layers = layers, layers_asym = layers_asym,
                           family = "matern_nonstat_asymm",
                           method = "REML", nsteps = 150L
   )
-  predML4 <- predict(d4, newdata = newdata)
+  t2 <- proc.time()
+  time5[i] <- (t2 - t1)[3]
+  predML5 <- predict(d5, newdata = newdata)
   
   df_pred1 <- data.frame(predML1$df_pred, y1=test_data$y1, y2=test_data$y2)
   df_pred2 <- data.frame(predML2$df_pred, y1=test_data$y1, y2=test_data$y2)
-  df_pred3 <- data.frame(predML3$df_pred, y1=test_data$y1, y2=test_data$y2)
+  df_pred3.1 <- data.frame(predML3.1$df_pred, y1=test_data$y1)
+  df_pred3.2 <- data.frame(predML3.2$df_pred, y2=test_data$y2)
   df_pred4 <- data.frame(predML4$df_pred, y1=test_data$y1, y2=test_data$y2)
+  df_pred5 <- data.frame(predML5$df_pred, y1=test_data$y1, y2=test_data$y2)
   
   # Save RMSPE and CRPS
   rmse1_model1[i] <- RMSPE(df_pred1$y1, df_pred1$pred_mean_1)
@@ -160,57 +194,72 @@ for (i in 1:5){
   crps1_model2[i] <- CRPS(df_pred2$y1, df_pred2$pred_mean_1, df_pred2$pred_var_1)
   crps2_model2[i] <- CRPS(df_pred2$y2, df_pred2$pred_mean_2, df_pred2$pred_var_2)
   
-  rmse1_model3[i] <- RMSPE(df_pred3$y1, df_pred3$pred_mean_1)
-  rmse2_model3[i] <- RMSPE(df_pred3$y2, df_pred3$pred_mean_2)
-  crps1_model3[i] <- CRPS(df_pred3$y1, df_pred3$pred_mean_1, df_pred3$pred_var_1)
-  crps2_model3[i] <- CRPS(df_pred3$y2, df_pred3$pred_mean_2, df_pred3$pred_var_2)
+  rmse1_model3[i] <- RMSPE(df_pred3.1$y1, df_pred3.1$pred_mean)
+  rmse2_model3[i] <- RMSPE(df_pred3.2$y2, df_pred3.2$pred_mean)
+  crps1_model3[i] <- CRPS(df_pred3.1$y1, df_pred3.1$pred_mean, df_pred3.1$pred_var)
+  crps2_model3[i] <- CRPS(df_pred3.2$y2, df_pred3.2$pred_mean, df_pred3.2$pred_var)
   
   rmse1_model4[i] <- RMSPE(df_pred4$y1, df_pred4$pred_mean_1)
   rmse2_model4[i] <- RMSPE(df_pred4$y2, df_pred4$pred_mean_2)
   crps1_model4[i] <- CRPS(df_pred4$y1, df_pred4$pred_mean_1, df_pred4$pred_var_1)
   crps2_model4[i] <- CRPS(df_pred4$y2, df_pred4$pred_mean_2, df_pred4$pred_var_2)
   
+  rmse1_model5[i] <- RMSPE(df_pred5$y1, df_pred5$pred_mean_1)
+  rmse2_model5[i] <- RMSPE(df_pred5$y2, df_pred5$pred_mean_2)
+  crps1_model5[i] <- CRPS(df_pred5$y1, df_pred5$pred_mean_1, df_pred5$pred_var_1)
+  crps2_model5[i] <- CRPS(df_pred5$y2, df_pred5$pred_mean_2, df_pred5$pred_var_2)
+  
+  Cost1[i] <- d1$run(d1$Cost)
+  Cost2[i] <- d2$run(d2$Cost)
+  Cost3[i] <- d3.1$run(d3.1$Cost) + d3.2$run(d3.2$Cost)
+  Cost4[i] <- d4$run(d4$Cost)
+  Cost5[i] <- d5$run(d5$Cost)
+  
+  if (i == 1){
+    
+    # Save parameter estimates
+    eta <- d5$run(d5$eta_tf)
+    AFF_pars <- d5$run(d5$layers_asym[[1]]$pars)
+    LFT_pars <- d5$run(d5$layers[[12]]$pars)
+    scalings <- d5$run(d5$scalings)
+    scalings_asym <- d5$run(d5$scalings_asym)
+    nu_1 <- d5$run(d5$nu_tf_1)
+    nu_2 <- d5$run(d5$nu_tf_2)
+    sigma2_1 <- d5$run(d5$sigma2_tf_1)
+    sigma2_2 <- d5$run(d5$sigma2_tf_2)
+    sigma2_12 <- d5$run(d5$sigma2_tf_12)
+    l <- as.numeric(d5$run(d5$l_tf_1))
+    precy_1 <- d5$run(d5$precy_tf_1)
+    precy_2 <- d5$run(d5$precy_tf_2)
+    s_warped1 <- d5$run(d5$swarped_tf1)
+    s_warped2 <- d5$run(d5$swarped_tf2)
+    beta <- d5$run(d5$beta)
+    parameter_est <- list(eta, AFF_pars, LFT_pars, scalings, scalings_asym,
+                          nu_1, nu_2, sigma2_1, sigma2_2, sigma2_12, l, precy_1, precy_2,
+                          s_warped1, s_warped2, beta)
+    save(parameter_est, file = paste0("results/simulation_asymm_parameter_estimate.rda"))
+    
+    newdata <- all_data
+    
+    # Save predictions for plotting the comparison
+    predML2 <- predict(d2, newdata = newdata)
+    predML4 <- predict(d4, newdata = newdata)
+    predML5 <- predict(d5, newdata = newdata)
+    
+    predML <- list(predML2$df_pred, predML4$df_pred, predML5$df_pred)
+    save(predML, file = "results/simulation_asymm_predictions.rda")
+  }
 }
 
 # Save cross validation results
-crossvalid <- list(rmse1_model1, crps1_model1, rmse2_model1, crps2_model1,
-                   rmse1_model2, crps1_model2, rmse2_model2, crps2_model2,
-                   rmse1_model3, crps1_model3, rmse2_model3, crps2_model3,
-                   rmse1_model4, crps1_model4, rmse2_model4, crps2_model4
+crossvalid <- list(rmse1_model1, crps1_model1, rmse2_model1, crps2_model1, Cost1, time1,
+                   rmse1_model2, crps1_model2, rmse2_model2, crps2_model2, Cost2, time2,
+                   rmse1_model3, crps1_model3, rmse2_model3, crps2_model3, Cost3, time3,
+                   rmse1_model4, crps1_model4, rmse2_model4, crps2_model4, Cost4, time4,
+                   rmse1_model5, crps1_model5, rmse2_model5, crps2_model5, Cost5, time5
 )
 
 save(crossvalid, file="results/simulation_asymm_crossvalidation.rda")
 
 # Cross validation results
-matrix(unlist(lapply(crossvalid, mean)), nrow = 4, byrow=T)
-
-# Fit models for plotting the comparison
-load("results/simulation_asymm_dataset.rda")
-newdata <- df
-
-# Fit Model 2 (stationary, asymmetric)
-d2 <- deepspat_multivar(f = z1 + z2 ~ s1 + s2 - 1, data = df2, g = ~ 1,
-                        layers_asym = layers_asym,
-                        family = "matern_stat_asymm",
-                        method = "REML", nsteps = 150L
-)
-predML2 <- predict(d2, newdata = newdata)
-
-# Fit Model 3 (nonstationary, symmetric)
-d3 <- deepspat_multivar(f = z1 + z2 ~ s1 + s2 - 1, data = df2, g = ~ 1,
-                        layers = layers,
-                        family = "matern_nonstat_symm",
-                        method = "REML", nsteps = 150L
-)
-predML3 <- predict(d3, newdata = newdata)
-
-# Fit Model 4 (nonstationary, asymmetric)
-d4 <- deepspat_multivar(f = z1 + z2 ~ s1 + s2 - 1, data = df2, g = ~ 1,
-                        layers = layers, layers_asym = layers_asym,
-                        family = "matern_nonstat_asymm",
-                        method = "REML", nsteps = 150L
-)
-predML4 <- predict(d4, newdata = newdata)
-
-predML <- list(predML2, predML3, predML4)
-save(predML, file = "results/simulation_asymm_predictions.rda")
+matrix(unlist(lapply(crossvalid, mean)), nrow = 5, byrow=T)
